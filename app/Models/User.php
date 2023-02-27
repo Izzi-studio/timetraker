@@ -6,7 +6,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Laravel\Sanctum\HasApiTokens;
+//use Laravel\Sanctum\HasApiTokens;
+use Laravel\Passport\HasApiTokens;
 
 class User extends Authenticatable
 {
@@ -21,6 +22,9 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'position',
+        'owner',
+        'company_id'
     ];
 
     /**
@@ -31,6 +35,8 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'company_id',
+        'owner'
     ];
 
     /**
@@ -41,4 +47,24 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];
+
+    public function company(){
+        return $this->belongsTo(Company::class,'company_id');
+    }
+
+    public function trackerWorkDays(){
+        return $this->hasMany(Tracker::class,'customer_id')->whereCurrentStatus(config('statuses.stop_day'));
+    }
+
+    public function trackerSickDays(){
+        return $this->hasMany(Tracker::class,'customer_id')->whereCurrentStatus(config('statuses.sick_day'));
+    }
+
+    public function trackerVacationDays(){
+        return $this->hasMany(Tracker::class,'customer_id')->whereCurrentStatus(config('statuses.vacation_day'));
+    }
+
+    public function tracker(){
+        return $this->hasMany(Tracker::class,'customer_id');
+    }
 }
