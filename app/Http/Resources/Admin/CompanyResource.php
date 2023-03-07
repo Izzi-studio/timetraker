@@ -17,7 +17,13 @@ class CompanyResource extends JsonResource
      */
     public function toArray($request)
     {
-
+        $status = 'inactiv';
+        if($this->status == 1){
+            $status = 'active';
+        }
+        if($this->status == 2){
+            $status = 'blocked';
+        }
         $return = [
             'id' => $this->id,
             'company_name' => $this->company_name,
@@ -25,8 +31,10 @@ class CompanyResource extends JsonResource
             'company_address' => $this->company_address,
             'company_email' => $this->company_email,
             'company_logo' => $this->company_logo,
+            'active_company' => $status,
+            'customers_count' => $this->customers->count(),
             //'company_customers' => !$this->customers->isEmpty() ? new CustomerCollection($this->customers) : null,
-            'company_request_update_info' => $this->requests->new()->first() ? new RequestChangeCompanyInfoResource($this->requests->new()->first()) : null,
+            'company_request_update_info' => $this->requests ? new RequestChangeCompanyInfoResource($this->requests) : null,
         ];
 
 

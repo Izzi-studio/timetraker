@@ -9,46 +9,60 @@ use Illuminate\Support\Facades\Validator;
 use App\Http\Resources\CustomerResource;
 use App\Models\User;
 use Carbon\Carbon;
-//use Carbon\CarbonInterval;
+use App\Models\Tracker;
+use DB;
+
 class CustomersController extends Controller
 {
     public function index(){
+        request()->filter = true;
 
-
-        $order = request()->get('order', 'total_work');
+        $order = request()->get('order', 'sum_total_work');
         $sort = request()->get('sort', 'desc');
-        $range = request()->get('range', 'month');
-        $year = request()->get('year', Carbon::now()->format('Y'));
-        $month = request()->get('month', Carbon::now()->format('m'));
+
+        $year = request()->get('year', null);
+        $month = request()->get('month', null);
+
+        if(!$year && !$month){
+            $response = new ResponseResult();
+            $response->setResult(false);
+            $response->setMessage('Send year and year and month');
+            return response()->json($response->makeResponse());
+        }
+
+        if ($year && !$month){
+            $template = '%Y';
+            $value = $year;
+        }else{
+            $template = '%Y-%m';
+            $value = $year.'-'.$month;
+        }
+
+        $subQuery = "date_format(created_at, '".$template."') = '".$value."'";
 
         $customers = auth()->user()->company->customers();
 
-        if($range == 'year'){
-            $customers = $customers->whereRaw("date_format(created_at, '%Y') = '".$year."'");
-        }else{
-            $customers = $customers->whereRaw("date_format(created_at, '%m') = '".$month."'");
-        }
+        $customers = $customers->withSum(['tracker as sum_total_work' => function($query) use ($subQuery){
+            $query->whereRaw($subQuery);
+        }],'work')
+          ->withSum(['tracker as sum_total_pause' => function($query) use ($subQuery){
+            $query->whereRaw($subQuery);
+        }],'pause')
+          ->withCount(['tracker as weekend_days_count'=>function($query) use ($subQuery){
+              $query->whereCurrentStatus(config('statuses.weekend_day'))->whereRaw($subQuery);
+        }])
+          ->withCount(['tracker as work_days_count'=>function($query) use ($subQuery){
+              $query->whereCurrentStatus(config('statuses.stop_day'))->whereRaw($subQuery);
+        }])
+          ->withCount(['tracker as sick_days_count'=>function($query) use ($subQuery){
+              $query->whereCurrentStatus(config('statuses.sick_day'))->whereRaw($subQuery);
+        }])
+          ->withCount(['tracker as vacation_days_count'=>function($query) use ($subQuery){
+              $query->whereCurrentStatus(config('statuses.vacation_day'))->whereRaw($subQuery);
+        }]);
 
-        if($order == 'total_work_time'){
-            $customers = $customers->withSum('tracker','total_work')->orderBy('tracker_sum_total_work', $sort);
-        }
 
-        if($order == 'total_pause_time'){
-            $customers = $customers->withSum('tracker','pause')->orderBy('tracker_sum_pause', $sort);
-        }
-
-        if($order == 'total_work_days'){
-            $customers = $customers->withCount('trackerWorkDays')->orderBy('tracker_work_days_count', $sort);
-        }
-
-        if($order == 'total_sick_days'){
-            $customers = $customers->withCount('trackerSickDays')->orderBy('tracker_sick_days_count', $sort);
-        }
-
-        if($order == 'total_vacation_days'){
-            $customers = $customers->withCount('trackerVacationDays')->orderBy('tracker_vacation_days_count', $sort);
-        }
-
+        $customers = $customers->orderBy($order, $sort);
 
         return new CustomerCollection($customers->get());
     }

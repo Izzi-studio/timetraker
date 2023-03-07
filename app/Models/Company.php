@@ -21,7 +21,7 @@ class Company extends Model{
     }
 
     public function requests(){
-        return $this->hasOne(RequestChangeCompanyInfo::class,'company_id');
+        return $this->hasOne(RequestChangeCompanyInfo::class,'company_id')->whereApproved(0);
     }
 
     public function scopeActive(\Illuminate\Database\Eloquent\Builder $query)

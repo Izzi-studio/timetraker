@@ -27,7 +27,7 @@ class RequestChangeCompanyInfo extends Model{
         return $this->hasOne(Company::class,'id','company_id');
     }
 
-    public function scopeNew(\Illuminate\Database\Eloquent\Builder $query)
+    public function scopeNotApproved(\Illuminate\Database\Eloquent\Builder $query)
     {
         return $query->where('approved', 0);
     }

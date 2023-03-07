@@ -20,7 +20,7 @@ class RequestChangeCompanyInfoResource extends JsonResource
         $return = [
             'id' => $this->id,
             'request_data_update' => $this->request_data_update,
-            //'current_info' => new CompanyResource($this->company),
+            'approved' => $this->approved,
         ];
 
 

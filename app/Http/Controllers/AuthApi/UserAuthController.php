@@ -9,17 +9,17 @@ use App\Models\Company;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Str;
 
 class UserAuthController extends Controller
 {
+
     public function registerCompany(Request $request)
     {
         $dataInputs = $request->all();
         $rules = [
-            'customer.name' => 'required|max:255',
-            'customer.email' => 'email|unique:users,email',
-            'customer.password' => 'required|confirmed',
+            'owner.name' => 'required|max:255',
+            'owner.email' => 'email|unique:users,email',
+            'owner.password' => 'required|confirmed',
             'company.company_name'=>'required',
             'company.company_email'=>'required',
         ];
@@ -30,12 +30,11 @@ class UserAuthController extends Controller
             return response()->json($validator->errors(),422);
         }
 
-        $dataInputs['customer']['password'] = bcrypt($request->password);
-        $dataInputs['company']['subdomain'] = Str::slug($dataInputs['company']['company_name']);
+        $dataInputs['owner']['password'] = bcrypt($dataInputs['owner']['password']);
 
         $company = Company::create($dataInputs['company']);
-        $dataInputs['customer']['company_id'] = $company->id;
-        $user = User::create($dataInputs['customer']);
+        $dataInputs['owner']['company_id'] = $company->id;
+        $user = User::create($dataInputs['owner']);
         $company->update(['owner_id'=>$user->id]);
         $token = $user->createToken('API Token')->accessToken;
 
@@ -72,8 +71,6 @@ class UserAuthController extends Controller
         }
 
         $dataInputs['password'] = bcrypt($request->password);
-
-
         $dataInputs['company_id'] = auth()->user()->company->id;
         $dataInputs['owner'] = false;
         $user = User::create($dataInputs);
@@ -91,6 +88,16 @@ class UserAuthController extends Controller
         return response()->json($response->makeResponse());
     }
 
+    public function logout(){
+        $user = auth()->user()->token();
+        $user->revoke();
+        $response = new ResponseResult();
+        $response->setResult(true);
+        $response->setMessage('Logout');
+
+        return response()->json($response->makeResponse());
+
+    }
     public function login(Request $request)
     {
         $response = new ResponseResult();
@@ -111,18 +118,31 @@ class UserAuthController extends Controller
         $token = auth()->user()->createToken('API Token')->accessToken;
 
         $redirect = 'page statistic';
+        $role = 'customer';
 
         if(auth()->user()->owner){
             $redirect = 'page list customers';
+            $role = 'owner';
         }
 
         if(auth()->user()->is_admin){
             $redirect = 'page list companies';
+            $role = 'admin';
+        }
+
+        $status = 'inactiv';
+        if(auth()->user()->company->status == 1){
+            $status = 'active';
+        }
+        if(auth()->user()->company->status == 2){
+            $status = 'blocked';
         }
 
         $data = [
             'token' => $token,
-            'redirect'=> $redirect
+            'redirect'=> $redirect,
+            'role'=> $role,
+            'active_company'=> $status
         ];
 
 
@@ -137,14 +157,31 @@ class UserAuthController extends Controller
     public function getMe(){
 
         $data['role']= 'customer';
+        $status = 'inactiv';
+        if(auth()->user()->company->status == 1){
+            $status = 'active';
+        }
+        if(auth()->user()->company->status == 2){
+            $status = 'blocked';
+        }
+        $data['active_company'] = $status;
 
         if(auth()->user()->owner){
             $data['role'] = 'owner';
-            $data['active_company'] = (bool)auth()->user()->company->status;
+
+            $status = 'inactiv';
+            if(auth()->user()->company->status == 1){
+                $status = 'active';
+            }
+            if(auth()->user()->company->status == 2){
+                $status = 'blocked';
+            }
+            $data['active_company'] = $status;
         }
 
         if(auth()->user()->is_admin){
             $data['role']= 'admin';
+            unset($data['active_company']);
         }
 
 

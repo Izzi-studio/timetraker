@@ -8,7 +8,8 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 //use Laravel\Sanctum\HasApiTokens;
 use Laravel\Passport\HasApiTokens;
-
+use Laravel\Passport\RefreshToken;
+use Laravel\Passport\Token;
 class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
@@ -66,5 +67,13 @@ class User extends Authenticatable
 
     public function tracker(){
         return $this->hasMany(Tracker::class,'customer_id');
+    }
+
+    public function scopeCustomers(\Illuminate\Database\Eloquent\Builder $query){
+        return $query->where('owner',0)->where('is_admin',0);
+    }
+
+    public function scopeCompany(\Illuminate\Database\Eloquent\Builder $query,$company_id = null){
+        return $query->where('company_id',$company_id);
     }
 }

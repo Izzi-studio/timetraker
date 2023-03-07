@@ -9,7 +9,7 @@ use Carbon\CarbonInterval;
 class Tracker extends Model{
     use HasFactory;
 
-    protected $fillable = ['customer_id','current_status','comments','date_start','date_stop','pause','total_work'];
+    protected $fillable = ['customer_id','current_status','comments','date_start','date_stop','pause','work'];
     /**
      * The table associated with the model.
      *
@@ -17,9 +17,13 @@ class Tracker extends Model{
      */
     protected $table = 'tracker';
 
-    public function scopeAllWorkTimeCurrentMonth(\Illuminate\Database\Eloquent\Builder $query){
-        return $query->whereRaw("date_format(created_at, '%Y-%m') = '".Carbon::now()
-                      ->format('Y-m')."'")->sum('total_work');
+    public function customer(){
+        return $this->hasOne(User::class,'id','customer_id');
     }
+
+    protected $dates = [
+        'date_start',
+        'date_stop',
+    ];
 
 }

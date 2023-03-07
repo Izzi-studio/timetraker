@@ -16,12 +16,12 @@ return new class extends Migration
         Schema::create('tracker', function (Blueprint $table) {
             $table->id();
             $table->integer('customer_id');
-            $table->integer('current_status');
+            $table->integer('current_status')->default(0);
             $table->string('comments')->nullable();
             $table->datetime('date_start')->nullable();
             $table->datetime('date_stop')->nullable();
             $table->integer('pause')->default(0);
-            $table->integer('total_work')->default(0);
+            $table->integer('work')->default(0);
             $table->timestamps();
         });
     }

@@ -50,4 +50,8 @@ class CompaniesController extends Controller
     public function show(Company $company){
         return new CompanyResource($company);
     }
+    public function update(Company $company){
+        $company->update(request()->all());
+        return new CompanyResource($company);
+    }
 }

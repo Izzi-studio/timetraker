@@ -3,7 +3,7 @@
 namespace App\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
-use Carbon\CarbonInterval;
+
 class CustomerResource extends JsonResource
 {
     /**
@@ -22,12 +22,19 @@ class CustomerResource extends JsonResource
             'email' => $this->email,
             'position' => $this->position,
             'owner' => (bool)$this->owner,
-            'total_work_time'=> CarbonInterval::seconds($this->trackerWorkDays()->sum('total_work'))->cascade()->format('%H:%I'),
-            'total_pause_time'=>  CarbonInterval::seconds($this->trackerWorkDays()->sum('pause'))->cascade()->format('%H:%I'),
-            'total_work_days'=> $this->trackerWorkDays()->count(),
-            'total_sick_days'=> $this->trackerSickDays()->count(),
-            'total_vacation_days'=> $this->trackerVacationDays()->count(),
             ];
+
+
+        if(request()->filter){
+            $return +=  [
+                'work_time'=>  convertMinutesToHumanTime($this->sum_total_work),
+                'pause_time'=> convertMinutesToHumanTime($this->sum_total_pause),
+                'work_days'=> $this->work_days_count,
+                'sick_days'=> $this->sick_days_count,
+                'vacation_days'=> $this->vacation_days_count,
+                'weekend_days'=> $this->weekend_days_count,
+            ];
+        }
 
 
         return $return;
