@@ -36,9 +36,9 @@ Route::post('/logout', [UserAuthController::class,'logout'])->middleware(['auth:
 Route::get('/getMe', [UserAuthController::class,'getMe'])->middleware(['auth:api']);
 
 Route::prefix('owner')->middleware(['auth:api','owner'])->group(function (){
-    Route::post('/register-customer', [UserAuthController::class,'registerCustomer']);
+   // Route::post('/register-customer', [UserAuthController::class,'registerCustomer']);
     Route::resource('/company', OwnerCompaniesController::class)->only(['index','store']);
-    Route::resource('/customers', OwnerCustomersController::class)->only(['index','show','update']);
+    Route::resource('/customers', OwnerCustomersController::class)->only(['index','show','update','destroy','store']);
     Route::get('/statistic/{customer}', [OwnerTrackerController::class,'tableStatistic']);
     Route::get('/statistic/tracker/{tracker}', [OwnerTrackerController::class,'show']);
     Route::put('/statistic/tracker/{tracker}', [OwnerTrackerController::class,'update']);
@@ -51,8 +51,8 @@ Route::prefix('customer')->middleware(['auth:api','customer'])->group(function (
 });
 
 Route::prefix('admin')->middleware(['auth:api','admin'])->group(function (){
-    Route::resource('/companies', CompaniesController::class)->only(['index','show','update']);
-    Route::resource('/customers', CustomersController::class)->only(['index','show','update']);
+    Route::resource('/companies', CompaniesController::class)->only(['index','show','update','destroy']);
+    Route::resource('/customers', CustomersController::class)->only(['index','show','update','destroy','store']);
     Route::resource('/change-info-company', RequestsChangeCompanyInfoController::class)->only(['show','update']);
 
     Route::get('/statistic/{customer}', [TrackerController::class,'tableStatistic']);

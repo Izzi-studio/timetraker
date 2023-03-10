@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Http\Resources\Admin\RequestChangeCompanyInfoResource;
+use App\Http\Resources\Admin\CompanyResource;
 use App\Models\RequestChangeCompanyInfo;
 
 class RequestsChangeCompanyInfoController extends Controller
@@ -16,7 +16,10 @@ class RequestsChangeCompanyInfoController extends Controller
                 $changeInfoCompany->update(['approved'=>request()->approved]);
             }
         }
-        return new RequestChangeCompanyInfoResource($changeInfoCompany);
+        if(request()->approved == 2){
+             $changeInfoCompany->update(['approved'=>request()->approved]);
+        }
+        return new CompanyResource($changeInfoCompany->company);
     }
 
 

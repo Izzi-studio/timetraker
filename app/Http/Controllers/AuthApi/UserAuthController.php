@@ -34,6 +34,7 @@ class UserAuthController extends Controller
 
         $company = Company::create($dataInputs['company']);
         $dataInputs['owner']['company_id'] = $company->id;
+        $dataInputs['owner']['position'] = 'Eigentümer';
         $user = User::create($dataInputs['owner']);
         $company->update(['owner_id'=>$user->id]);
         $token = $user->createToken('API Token')->accessToken;
@@ -54,39 +55,6 @@ class UserAuthController extends Controller
         return response()->json($response->makeResponse());
     }
 
-    public function registerCustomer(Request $request)
-    {
-        $dataInputs = $request->all();
-        $rules = [
-            'name' => 'required|max:255',
-            'email' => 'email|unique:users,email',
-            'password' => 'required|confirmed',
-            'position' => 'required'
-        ];
-
-        $validator = Validator::make($dataInputs,$rules);
-
-        if($validator->fails()){
-            return response()->json($validator->errors(),422);
-        }
-
-        $dataInputs['password'] = bcrypt($request->password);
-        $dataInputs['company_id'] = auth()->user()->company->id;
-        $dataInputs['owner'] = false;
-        $user = User::create($dataInputs);
-
-        $data = [
-            'user' => $user,
-            'redirect'=>'to list users'
-        ];
-
-        $response = new ResponseResult();
-        $response->setResult(true);
-        $response->setMessage('Customer created');
-        $response->setData($data);
-
-        return response()->json($response->makeResponse());
-    }
 
     public function logout(){
         $user = auth()->user()->token();
@@ -120,9 +88,26 @@ class UserAuthController extends Controller
         $redirect = 'page statistic';
         $role = 'customer';
 
+
+        $data = [];
+
+
         if(auth()->user()->owner){
             $redirect = 'page list customers';
             $role = 'owner';
+        }
+
+        if(!auth()->user()->is_admin){
+            $status = 'inactiv';
+
+            if (auth()->user()->company->status == 1) {
+                $status = 'active';
+            }
+
+            if (auth()->user()->company->status == 2) {
+                $status = 'blocked';
+            }
+            $data['active_company'] = $status;
         }
 
         if(auth()->user()->is_admin){
@@ -130,19 +115,11 @@ class UserAuthController extends Controller
             $role = 'admin';
         }
 
-        $status = 'inactiv';
-        if(auth()->user()->company->status == 1){
-            $status = 'active';
-        }
-        if(auth()->user()->company->status == 2){
-            $status = 'blocked';
-        }
 
-        $data = [
+        $data += [
             'token' => $token,
             'redirect'=> $redirect,
             'role'=> $role,
-            'active_company'=> $status
         ];
 
 
@@ -157,14 +134,7 @@ class UserAuthController extends Controller
     public function getMe(){
 
         $data['role']= 'customer';
-        $status = 'inactiv';
-        if(auth()->user()->company->status == 1){
-            $status = 'active';
-        }
-        if(auth()->user()->company->status == 2){
-            $status = 'blocked';
-        }
-        $data['active_company'] = $status;
+
 
         if(auth()->user()->owner){
             $data['role'] = 'owner';

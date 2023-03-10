@@ -68,6 +68,9 @@ class User extends Authenticatable
     public function tracker(){
         return $this->hasMany(Tracker::class,'customer_id');
     }
+    public function trackerProcessing(){
+        return $this->hasMany(TrackerProcessing::class,'customer_id');
+    }
 
     public function scopeCustomers(\Illuminate\Database\Eloquent\Builder $query){
         return $query->where('owner',0)->where('is_admin',0);

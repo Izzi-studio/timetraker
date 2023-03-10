@@ -15,7 +15,9 @@ class Company extends Model{
      */
     protected $table = 'companies';
 
-
+    protected $dates = [
+        'created_at'
+    ];
     public function customers(){
         return $this->hasMany(User::class,'company_id');
     }

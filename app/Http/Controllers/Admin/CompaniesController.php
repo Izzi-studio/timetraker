@@ -7,6 +7,7 @@ use App\Http\Resources\Admin\CompanyCollection;
 use App\Http\Resources\Admin\CompanyResource;
 use App\Http\Resources\Admin\CustomerCollection;
 use App\Http\Resources\Admin\CustomerResource;
+use App\Http\Responses\ResponseResult;
 use App\Models\Company;
 
 class CompaniesController extends Controller
@@ -14,19 +15,19 @@ class CompaniesController extends Controller
     public function index(){
         $status = request()->get('status',null);
         $perPage = request()->query('perPage', 20);
-        $orderBy = request()->query('orderBy', 'customers_count');
+        $orderBy = request()->query('order', 'customers_count');
         $sort = request()->query('sort', 'desc');
         $query = new Company();
 
-        if($status === 0){
+        if($status == 'inactiv'){
             $query = $query->noActive();
         }
 
-        if($status == 1){
+        if($status == 'active'){
             $query = $query->active();
         }
 
-        if($status == 2){
+        if($status == 'blocked'){
             $query = $query->suspended();
         }
 
@@ -38,8 +39,15 @@ class CompaniesController extends Controller
             $query =  $query->orderBy('created_at', $sort);
         }
 
-        $query =  $query->withCount('requests')->orderBy('requests_count', $sort);
+      //  $query =  $query->withCount('requests')->orderBy('requests_count', $sort);
 
+        $queryStr = request()->get('search',null);
+
+        if ($queryStr){
+            $query = $query->where('company_name','LIKE','%'.$queryStr.'%')
+                ->orWhere('id',$queryStr)
+                ->orWhere('company_email','LIKE','%'.$queryStr.'%');
+        }
 
         $companies = $query->paginate($perPage)->withQueryString();
 
@@ -51,7 +59,34 @@ class CompaniesController extends Controller
         return new CompanyResource($company);
     }
     public function update(Company $company){
-        $company->update(request()->all());
+        $updateData = request()->all();
+        $status = 2;
+
+        if(request()->get('status', null) == 'inactiv'){
+            $status = 0;
+        }
+        if(request()->get('status', null) == 'active'){
+            $status = 1;
+        }
+
+        $updateData['status'] = $status;
+        $company->update($updateData);
         return new CompanyResource($company);
+    }
+
+    public function destroy(Company $company){
+        foreach ($company->customers as $customer) {
+            $customer->tracker()->delete();
+            $customer->trackerProcessing()->delete();
+            $customer->delete();
+        }
+        $company->requests()->delete();
+        $company->delete();
+
+        $response = new ResponseResult();
+        $response->setResult(true);
+        $response->setMessage('Company and other data deleted');
+
+        return response()->json($response->makeResponse());
     }
 }

@@ -27,12 +27,12 @@ class CustomerResource extends JsonResource
 
         if(request()->filter){
             $return +=  [
-                'work_time'=>  convertMinutesToHumanTime($this->sum_total_work),
-                'pause_time'=> convertMinutesToHumanTime($this->sum_total_pause),
-                'work_days'=> $this->work_days_count,
-                'sick_days'=> $this->sick_days_count,
-                'vacation_days'=> $this->vacation_days_count,
-                'weekend_days'=> $this->weekend_days_count,
+                'sum_total_work'=>  convertMinutesToHumanTime($this->sum_total_work),
+                'sum_total_pause'=> convertMinutesToHumanTime($this->sum_total_pause),
+                'work_days_count'=> $this->work_days_count,
+                'sick_days_count'=> $this->sick_days_count,
+                'vacation_days_count'=> $this->vacation_days_count,
+                'weekend_days_count'=> $this->weekend_days_count,
             ];
         }
 

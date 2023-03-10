@@ -17,12 +17,10 @@ class CompaniesController extends Controller
 
     public function store(){
 
-        $request = RequestChangeCompanyInfo::whereCompanyId(auth()->user()->company->id)->whereApproved(0)->count();
-        if($request > 0){
-            $response = new ResponseResult();
-            $response->setResult(true);
-            $response->setMessage('Request in processed review');
-            return response()->json($response->makeResponse());
+        $request = RequestChangeCompanyInfo::whereCompanyId(auth()->user()->company->id)->whereApproved(0);
+
+        if($request){
+            $request->delete();
         }
 
         $data['company_id'] = auth()->user()->company->id;

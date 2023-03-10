@@ -32,6 +32,7 @@ class CompanyResource extends JsonResource
             'company_email' => $this->company_email,
             'company_logo' => $this->company_logo,
             'active_company' => $status,
+            'created_at' => $this->created_at->format('Y-m-d'),
             'customers_count' => $this->customers->count(),
             //'company_customers' => !$this->customers->isEmpty() ? new CustomerCollection($this->customers) : null,
             'company_request_update_info' => $this->requests ? new RequestChangeCompanyInfoResource($this->requests) : null,

@@ -62,10 +62,20 @@ class TrackerController extends Controller
             $data['date_start'] = request()->get('date_start', $tracker->date_start);
             $data['date_stop'] = request()->get('date_stop', $tracker->date_stop);
             $data['pause'] = $pausedMinutes;
+            $data['comments'] = request()->get('comments', $tracker->comments);
             $data['work'] = $stop->diffInMinutes($start) - $pausedMinutes;
             $status = isset($this->typeAction[request()->get('current_status')]) ? $this->typeAction[request()->get('current_status')] : $tracker->current_status;
 
             $data['current_status'] = $status;
+
+            $nullableStatuses = [0,5,6];
+
+            if (in_array($status,$nullableStatuses)){
+                $data['work'] = 0;
+                $data['pause'] = 0;
+                $data['date_start'] = null;
+                $data['date_stop'] = null;
+            }
 
             $tracker->update($data);
 
@@ -96,8 +106,8 @@ class TrackerController extends Controller
                 $trackers = $trackers->select(
                     'created_at',
                     DB::raw("date_format(created_at, '%Y-%m') as month"),
-                    DB::raw("sum(work) as total_work"),
-                    DB::raw("sum(pause) as total_pause"),
+                    DB::raw("sum(work) as sum_total_work"),
+                    DB::raw("sum(pause) as sum_total_pause"),
                     DB::raw("(select count(id) from tracker where current_status = ".config('statuses.sick_day')." and date_format(created_at, '%Y-%m') = month AND customer_id = ".$customer->id." ) as sick_days"),
                     DB::raw("(select count(id) from tracker where current_status = ".config('statuses.stop_day')." and date_format(created_at, '%Y-%m') = month  AND customer_id = ".$customer->id.") as work_days"),
                     DB::raw("(select count(id) from tracker where current_status = ".config('statuses.vacation_day')." and date_format(created_at, '%Y-%m') = month  AND customer_id = ".$customer->id.") as vacation_days"),

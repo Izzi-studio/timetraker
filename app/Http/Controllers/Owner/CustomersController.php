@@ -67,6 +67,46 @@ class CustomersController extends Controller
         return new CustomerCollection($customers->get());
     }
 
+    public function store()
+    {
+        $dataInputs = request()->all();
+        $rules = [
+            'name' => 'required|max:255',
+            'email' => 'email|unique:users,email',
+            'password' => 'required|confirmed',
+            'position' => 'required'
+        ];
+
+        $validator = Validator::make($dataInputs,$rules);
+
+        if($validator->fails()){
+            return response()->json($validator->errors(),422);
+        }
+
+        $dataInputs['password'] = bcrypt(request()->password);
+        $dataInputs['company_id'] = auth()->user()->company->id;
+        $dataInputs['owner'] = false;
+        $user = User::create($dataInputs);
+
+        $dataInsert = [
+            'current_status'=>0,
+            'customer_id' => $user->id
+        ];
+
+        Tracker::create($dataInsert);
+
+        $data = [
+            'user' => $user,
+            'redirect'=>'to list users'
+        ];
+
+        $response = new ResponseResult();
+        $response->setResult(true);
+        $response->setMessage('Customer created');
+        $response->setData($data);
+
+        return response()->json($response->makeResponse());
+    }
     public function show(User $customer){
         if($customer->company_id == auth()->user()->company->id) {
             return new CustomerResource($customer);
@@ -90,15 +130,16 @@ class CustomersController extends Controller
                 'position' => 'required'
             ];
 
-            if (request()->get('password',null)) {
+
+            if (request()->get('password', null)) {
                 $rules['password'] = 'required|confirmed';
-            }
-
-            $validator = Validator::make($dataInputs, $rules);
-
-            if (request()->get('password',null)) {
                 $dataInputs['password'] = bcrypt($dataInputs['password']);
+
+            }else{
+                unset($dataInputs['password']);
+                unset($dataInputs['password_confirmation']);
             }
+            $validator = Validator::make(request()->all(), $rules);
 
             if ($validator->fails()) {
                 return response()->json($validator->errors(), 422);
@@ -112,6 +153,26 @@ class CustomersController extends Controller
         $response = new ResponseResult();
         $response->setResult(false);
         $response->setMessage('Your action blocked');
+
+        return response()->json($response->makeResponse());
+    }
+
+    public function destroy(User $customer){
+
+        if($customer->owner){
+            $response = new ResponseResult();
+            $response->setResult(false);
+            $response->setMessage('Your do not delete self');
+
+            return response()->json($response->makeResponse());
+        }
+        $customer->tracker()->delete();
+        $customer->trackerProcessing()->delete();
+        $customer->delete();
+
+        $response = new ResponseResult();
+        $response->setResult(true);
+        $response->setMessage('Customer deleted');
 
         return response()->json($response->makeResponse());
     }
