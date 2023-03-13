@@ -25,7 +25,8 @@ class User extends Authenticatable
         'password',
         'position',
         'owner',
-        'company_id'
+        'company_id',
+        'timezone'
     ];
 
     /**
@@ -48,21 +49,20 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];
-
+    /**
+     * Boot
+     *
+     * @return void
+     */
+    protected static function boot()
+    {
+        parent::boot();
+        static::creating(function ($query) {
+            $query->timezone = request()->hasHeader('time-zone') ? request()->header('time-zone') : env('DEFAULT_TIMEZONE');
+        });
+    }
     public function company(){
         return $this->belongsTo(Company::class,'company_id');
-    }
-
-    public function trackerWorkDays(){
-        return $this->hasMany(Tracker::class,'customer_id')->whereCurrentStatus(config('statuses.stop_day'));
-    }
-
-    public function trackerSickDays(){
-        return $this->hasMany(Tracker::class,'customer_id')->whereCurrentStatus(config('statuses.sick_day'));
-    }
-
-    public function trackerVacationDays(){
-        return $this->hasMany(Tracker::class,'customer_id')->whereCurrentStatus(config('statuses.vacation_day'));
     }
 
     public function tracker(){

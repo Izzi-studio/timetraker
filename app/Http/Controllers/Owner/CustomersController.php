@@ -96,8 +96,7 @@ class CustomersController extends Controller
         Tracker::create($dataInsert);
 
         $data = [
-            'user' => $user,
-            'redirect'=>'to list users'
+            'user' => $user
         ];
 
         $response = new ResponseResult();

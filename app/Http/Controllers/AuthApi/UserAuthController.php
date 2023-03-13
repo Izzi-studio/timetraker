@@ -34,7 +34,7 @@ class UserAuthController extends Controller
 
         $company = Company::create($dataInputs['company']);
         $dataInputs['owner']['company_id'] = $company->id;
-        $dataInputs['owner']['position'] = 'Eigentümer';
+        $dataInputs['owner']['position'] = env('DEFAULT_OWNER_POSITION');
         $user = User::create($dataInputs['owner']);
         $company->update(['owner_id'=>$user->id]);
         $token = $user->createToken('API Token')->accessToken;
@@ -43,8 +43,7 @@ class UserAuthController extends Controller
         $data = [
             'user' => $user,
             'token' => $token,
-            'company'=> new CompanyResource($company),
-            'redirect'=>'to list users'
+            'company'=> new CompanyResource($company)
         ];
 
         $response = new ResponseResult();
@@ -84,16 +83,14 @@ class UserAuthController extends Controller
         }
 
         $token = auth()->user()->createToken('API Token')->accessToken;
+        auth()->user()->timezone =  request()->hasHeader('time-zone') ? request()->header('time-zone') : env('DEFAULT_TIMEZONE');
+        auth()->user()->save();
 
-        $redirect = 'page statistic';
         $role = 'customer';
-
 
         $data = [];
 
-
         if(auth()->user()->owner){
-            $redirect = 'page list customers';
             $role = 'owner';
         }
 
@@ -111,15 +108,13 @@ class UserAuthController extends Controller
         }
 
         if(auth()->user()->is_admin){
-            $redirect = 'page list companies';
             $role = 'admin';
         }
 
 
         $data += [
             'token' => $token,
-            'redirect'=> $redirect,
-            'role'=> $role,
+            'role'=> $role
         ];
 
 
